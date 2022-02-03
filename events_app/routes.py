@@ -2,7 +2,7 @@
 import os
 from flask import Blueprint, request, render_template, redirect, url_for, flash
 from datetime import date, datetime
-from events_app.models import Event, Guest
+from events_app.models import Event, Guest, guest_event_table
 
 from events_app import app, db
 
@@ -30,6 +30,7 @@ def create():
         time = request.form.get('time')
 
         try:
+            # refactor this later
             date_and_time = datetime.strptime(
                 f'{date} {time}',
                 '%Y-%m-%d %H:%M')
@@ -53,8 +54,8 @@ def event_detail(event_id):
 
     # TODO: Get the event with the given id and send to the template
     event = Event.query.get_or_404(event_id)
-    
-    return render_template('event_detail.html', title=event.title, event=event)
+    guests = db.session.query(guest_event_table).filter_by(event_id=event.id)
+    return render_template('event_detail.html', title=event.title, event=event, guests=guests)
 
 
 @main.route('/event/<event_id>', methods=['POST'])
@@ -63,22 +64,34 @@ def rsvp(event_id):
     # TODO: Get the event with the given id from the database
     is_returning_guest = request.form.get('returning')
     guest_name = request.form.get('guest_name')
+    event = Event.query.get_or_404(event_id)
 
     if is_returning_guest:
-        # TODO: Look up the guest by name. If the guest doesn't exist in the 
-        # database, render the event_detail.html template, and pass in an error
-        # message as `error`.
+        exists = db.session.query(Guest.id).filter_by(name=guest_name).first() is not None
 
         # TODO: If the guest does exist, add the event to their 
         # events_attending, then commit to the database.
-        pass
+        if exists:
+            update_guest = Guest.query.filter_by(name=guest_name).one()
+            update_guest.events_attending.append(event)
+            db.session.add(update_guest)
+            db.session.commit()
+        # TODO: Look up the guest by name. If the guest doesn't exist in the 
+        # database, render the event_detail.html template, and pass in an error
+        # message as `error`.
+        else:
+            return render_template('event_detail.html', error='error', title=event.title, event=event)
     else:
         guest_email = request.form.get('email')
         guest_phone = request.form.get('phone')
 
         # TODO: Create a new guest with the given name, email, and phone, and 
         # add the event to their events_attending, then commit to the database.
-        pass
+        new_guest = Guest(name=guest_name, email=guest_email, phone=guest_phone)
+        new_guest.events_attending.append(event)
+
+        db.session.add(new_guest)
+        db.session.commit()
     
     flash('You have successfully RSVP\'d! See you there!')
     return redirect(url_for('main.event_detail', event_id=event_id))
@@ -87,5 +100,7 @@ def rsvp(event_id):
 @main.route('/guest/<guest_id>')
 def guest_detail(guest_id):
     # TODO: Get the guest with the given id and send to the template
-    
-    return render_template('guest_detail.html')
+    guest = Guest.query.get_or_404(guest_id)
+    return render_template('guest_detail.html', guest=guest)
+
+# kevin, kevin@du.com, 111 111 1111

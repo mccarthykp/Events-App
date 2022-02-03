@@ -16,7 +16,7 @@ class Guest(db.Model):
     name = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(80), nullable=False)
     phone = db.Column(db.String(80), nullable=False)
-    # events_attending = db.relationship('Event', secondary='event_guest', backref='guests')
+    events_attending = db.relationship('Event', secondary='event_guest', back_populates='guests')
 
 # TODO: Create a model called `Event` with the following fields:
 # - id: primary key
@@ -39,7 +39,7 @@ class Event(db.Model):
     description = db.Column(db.String(80), nullable=False)
     date_and_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     event_type = db.Column(db.Enum(Event_type), default=Event_type.ALL)
-    # guests = db.relationship('Guest', secondary='event_guest', backref='events_attending')
+    guests = db.relationship('Guest', secondary='event_guest', back_populates='events_attending')
 
     def __init__(self, title, description, date_and_time):
         self.title = title

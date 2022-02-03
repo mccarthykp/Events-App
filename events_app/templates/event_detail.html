@@ -13,10 +13,10 @@
 
     <p>{{ event.description }}</p>
 
-    <p><strong>Date:</strong> {{ event.date }}</p>
-    <p><strong>Time:</strong> {{ event.time }}</p>
+    <p><strong>Date:</strong> {{ (event.date_and_time|string)[:10] }}</p>
+    <p><strong>Time:</strong> {{ (event.date_and_time|string)[11:] }}</p>
 
-    <p><strong>Number of Guests:</strong> 5</p>
+    <p><strong>Number of Guests:</strong> {{ event.guests|count }}</p>
 
     <form method="POST">
         <fieldset>
@@ -60,11 +60,9 @@
 
 <h2>Guests Attending:</h2>
 <ul>
-    
-    <li><a href="/guest/1">Meredith</a></li>
-    <li><a href="/guest/2">Dani</a></li>
-    <li><a href="/guest/3">Jordan</a></li>
-    <li><a href="/guest/4">Ducky</a></li>
+{% for guest in event.guests %}
+    <li><a href="/guest/{{ guest.id }}">{{ guest.name }}</a></li>
+{% endfor %}
 </ul>
 
 {% endblock %}
